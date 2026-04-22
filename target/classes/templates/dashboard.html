@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Nutrition DSS</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="nav-brand">🥦 Nutrition DSS</div>
+    <div class="nav-links">
+        <span class="nav-user">Hello, <strong th:text="${user.fullName}">User</strong></span>
+        <a href="/history">History</a>
+        <a href="/logout" class="btn-nav-outline">Logout</a>
+    </div>
+</nav>
+
+<div class="page-container">
+
+    <!-- Alert messages -->
+    <div th:if="${param.profileSaved}" class="alert alert-success">
+        ✅ Health profile saved successfully!
+    </div>
+    <div th:if="${param.noProfile}" class="alert alert-error">
+        ⚠️ Please fill in your health profile before generating a plan.
+    </div>
+
+    <div class="dashboard-grid">
+
+        <!-- LEFT: Health Profile Form -->
+        <div class="card">
+            <div class="card-header">
+                <h2>📋 Your Health Profile</h2>
+                <p>Fill in your details to get personalized recommendations</p>
+            </div>
+
+            <form action="/profile" method="post">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="age">Age (years)</label>
+                        <!-- th:value fills in saved value from Java -->
+                        <input type="number" id="age" name="age" min="1" max="120"
+                               placeholder="e.g. 25"
+                               th:value="${profile != null ? profile.age : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="gender">Gender</label>
+                        <select id="gender" name="gender" required>
+                            <option value="">-- Select --</option>
+                            <option value="MALE"   th:selected="${profile != null && profile.gender == 'MALE'}">Male</option>
+                            <option value="FEMALE" th:selected="${profile != null && profile.gender == 'FEMALE'}">Female</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="heightCm">Height (cm)</label>
+                        <input type="number" id="heightCm" name="heightCm"
+                               step="0.1" min="50" max="250"
+                               placeholder="e.g. 170"
+                               th:value="${profile != null ? profile.heightCm : ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="weightKg">Weight (kg)</label>
+                        <input type="number" id="weightKg" name="weightKg"
+                               step="0.1" min="10" max="300"
+                               placeholder="e.g. 65"
+                               th:value="${profile != null ? profile.weightKg : ''}" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="activityLevel">Activity Level</label>
+                    <select id="activityLevel" name="activityLevel" required>
+                        <option value="">-- Select --</option>
+                        <option value="SEDENTARY" th:selected="${profile != null && profile.activityLevel == 'SEDENTARY'}">
+                            Sedentary (desk job, little exercise)
+                        </option>
+                        <option value="MODERATE" th:selected="${profile != null && profile.activityLevel == 'MODERATE'}">
+                            Moderate (light exercise 3-5 days/week)
+                        </option>
+                        <option value="ACTIVE" th:selected="${profile != null && profile.activityLevel == 'ACTIVE'}">
+                            Active (intense exercise daily)
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="healthCondition">Health Condition</label>
+                    <select id="healthCondition" name="healthCondition" required>
+                        <option value="NONE"          th:selected="${profile == null || profile.healthCondition == 'NONE'}">None</option>
+                        <option value="DIABETES"      th:selected="${profile != null && profile.healthCondition == 'DIABETES'}">Diabetes</option>
+                        <option value="HYPERTENSION"  th:selected="${profile != null && profile.healthCondition == 'HYPERTENSION'}">Hypertension (High BP)</option>
+                        <option value="OBESITY"       th:selected="${profile != null && profile.healthCondition == 'OBESITY'}">Obesity</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full">Save Profile</button>
+            </form>
+        </div>
+
+        <!-- RIGHT: BMI + Generate -->
+        <div class="side-panel">
+
+            <!-- BMI Card (only shows if profile exists) -->
+            <div class="card bmi-card" th:if="${profile != null}">
+                <h3>📊 Your BMI</h3>
+                <div class="bmi-display">
+                    <span class="bmi-value" th:text="${profile.bmi}">--</span>
+                </div>
+                <div class="bmi-category"
+                     th:text="${profile.BMICategory}"
+                     th:classappend="${profile.BMICategory == 'Normal'} ? 'bmi-normal' :
+                                     (${profile.BMICategory == 'Underweight'} ? 'bmi-under' : 'bmi-over')">
+                </div>
+                <div class="bmi-scale">
+                    <div class="scale-bar">
+                        <span class="scale-label">Underweight</span>
+                        <span class="scale-label">Normal</span>
+                        <span class="scale-label">Overweight</span>
+                        <span class="scale-label">Obese</span>
+                    </div>
+                    <div class="scale-ranges">
+                        &lt;18.5 | 18.5–24.9 | 25–29.9 | ≥30
+                    </div>
+                </div>
+                <table class="profile-summary">
+                    <tr>
+                        <td>Condition:</td>
+                        <td><strong th:text="${profile.healthCondition}">-</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Activity:</td>
+                        <td><strong th:text="${profile.activityLevel}">-</strong></td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Generate Plan Button -->
+            <div class="card generate-card" th:if="${profile != null}">
+                <h3>🍽️ Ready to Generate?</h3>
+                <p>Based on your health profile, we'll generate a personalized diet plan.</p>
+                <a href="/generate" class="btn btn-success btn-full">Generate Diet Plan</a>
+            </div>
+
+            <!-- Prompt to fill profile if not done -->
+            <div class="card" th:if="${profile == null}">
+                <h3>👈 Start Here</h3>
+                <p>Fill in your health profile on the left to calculate your BMI and generate a diet plan.</p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
