@@ -1,6 +1,6 @@
 package com.nutrition.dss.controller.api;
 
-import com.nutrition.dss.dto.DietOutputDTO;
+import com.nutrition.dss.dto.WeeklyPlanDTO;
 import com.nutrition.dss.dto.HealthProfileDTO;
 import com.nutrition.dss.exception.ResourceNotFoundException;
 import com.nutrition.dss.model.HealthProfile;
@@ -39,7 +39,7 @@ public class DietApiController {
      * Optionally accepts profile overrides in the request body.
      */
     @PostMapping("/generate")
-    public ResponseEntity<DietOutputDTO> generatePlan(
+    public ResponseEntity<WeeklyPlanDTO> generatePlan(
             @Valid @RequestBody(required = false) HealthProfileDTO profileOverride,
             Authentication authentication) {
 
@@ -60,11 +60,10 @@ public class DietApiController {
         }
 
         // Generate structured output
-        DietOutputDTO output = ruleEngineService.generateDietOutputDTO(profile);
+        WeeklyPlanDTO output = ruleEngineService.generateWeeklyPlan(profile);
 
         // Save to history
-        var plan = ruleEngineService.generateDietPlan(profile);
-        ruleEngineService.savePlan(user, plan, profile);
+        ruleEngineService.saveWeeklyPlan(user, output, profile);
 
         return ResponseEntity.ok(output);
     }

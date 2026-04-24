@@ -2,6 +2,7 @@ package com.nutrition.dss.service;
 
 import com.nutrition.dss.dto.DietOutputDTO;
 import com.nutrition.dss.dto.FoodItemDTO;
+import com.nutrition.dss.dto.WeeklyPlanDTO;
 import com.nutrition.dss.model.*;
 import com.nutrition.dss.repository.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -119,33 +120,59 @@ public class RuleEngineService {
             result.get(decision).add(food);
         }
 
-        // --- LLM Refinement based on Allergies and BMI ---
+        // --- Base Rule Engine Plan Complete ---
+        return result;
+    }
+
+    /**
+     * Generate a full 7-day WeeklyPlanDTO. Uses Groq LLM if available, otherwise mocks a basic plan based on rules.
+     */
+    public WeeklyPlanDTO generateWeeklyPlan(HealthProfile profile) {
+        Map<String, List<FoodItem>> basePlan = generateDietPlan(profile);
+        DietOutputDTO baseDto = new DietOutputDTO(
+                toFoodItemDTOs(basePlan.get("RECOMMENDED")),
+                toFoodItemDTOs(basePlan.get("LIMITED")),
+                toFoodItemDTOs(basePlan.get("AVOID"))
+        );
+
         if (groqService.isAvailable()) {
-            DietOutputDTO baseDto = new DietOutputDTO(
-                    toFoodItemDTOs(result.get("RECOMMENDED")),
-                    toFoodItemDTOs(result.get("LIMITED")),
-                    toFoodItemDTOs(result.get("AVOID"))
-            );
-            
-            DietOutputDTO refinedDto = groqService.generateLLMDietPlan(baseDto, profile);
-            
-            // Map the DTO lists back to FoodItem entities
-            result.get("RECOMMENDED").clear();
-            result.get("LIMITED").clear();
-            result.get("AVOID").clear();
-            
-            if (refinedDto.getRecommended() != null) {
-                refinedDto.getRecommended().forEach(dto -> result.get("RECOMMENDED").add(toFoodItem(dto)));
-            }
-            if (refinedDto.getLimited() != null) {
-                refinedDto.getLimited().forEach(dto -> result.get("LIMITED").add(toFoodItem(dto)));
-            }
-            if (refinedDto.getAvoid() != null) {
-                refinedDto.getAvoid().forEach(dto -> result.get("AVOID").add(toFoodItem(dto)));
+            WeeklyPlanDTO llmPlan = groqService.generateWeeklyDietPlan(baseDto, profile);
+            if (llmPlan != null && llmPlan.getDays() != null && !llmPlan.getDays().isEmpty()) {
+                return llmPlan;
             }
         }
 
-        return result;
+        // Fallback: Generate a basic mock weekly plan using the recommended foods
+        return generateMockWeeklyPlan(baseDto.getRecommended());
+    }
+
+    private WeeklyPlanDTO generateMockWeeklyPlan(List<FoodItemDTO> recommended) {
+        List<com.nutrition.dss.dto.DailyPlanDTO> days = new ArrayList<>();
+        String[] dayNames = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+        
+        for (String day : dayNames) {
+            com.nutrition.dss.dto.DailyPlanDTO daily = new com.nutrition.dss.dto.DailyPlanDTO();
+            daily.setDay(day);
+            
+            com.nutrition.dss.dto.MealDTO bfast = new com.nutrition.dss.dto.MealDTO();
+            bfast.setName("Healthy Breakfast");
+            bfast.setDescription("Oats and fruits (Fallback rule-based)");
+            
+            com.nutrition.dss.dto.MealDTO lunch = new com.nutrition.dss.dto.MealDTO();
+            lunch.setName("Balanced Lunch");
+            lunch.setDescription("Grains and proteins (Fallback rule-based)");
+            
+            com.nutrition.dss.dto.MealDTO dinner = new com.nutrition.dss.dto.MealDTO();
+            dinner.setName("Light Dinner");
+            dinner.setDescription("Vegetables and proteins (Fallback rule-based)");
+            
+            daily.setBreakfast(bfast);
+            daily.setLunch(lunch);
+            daily.setDinner(dinner);
+            days.add(daily);
+        }
+        
+        return new WeeklyPlanDTO(days);
     }
 
     /**
@@ -188,32 +215,16 @@ public class RuleEngineService {
         return item;
     }
 
-    /** Save a generated plan to history */
-    public DietPlan savePlan(User user, Map<String, List<FoodItem>> plan, HealthProfile profile) {
-        // Build summary string (backward compatible)
-        StringBuilder summary = new StringBuilder();
-        for (Map.Entry<String, List<FoodItem>> entry : plan.entrySet()) {
-            summary.append(entry.getKey()).append(":");
-            for (FoodItem food : entry.getValue()) {
-                summary.append(food.getName()).append(",");
-            }
-            summary.append("|");
-        }
-
-        // Build JSON output
+    /** Save a generated weekly plan to history */
+    public DietPlan saveWeeklyPlan(User user, WeeklyPlanDTO weeklyPlan, HealthProfile profile) {
         String planJson = null;
         try {
-            DietOutputDTO dto = new DietOutputDTO(
-                    toFoodItemDTOs(plan.get("RECOMMENDED")),
-                    toFoodItemDTOs(plan.get("LIMITED")),
-                    toFoodItemDTOs(plan.get("AVOID"))
-            );
-            planJson = objectMapper.writeValueAsString(dto);
+            planJson = objectMapper.writeValueAsString(weeklyPlan);
         } catch (Exception e) {
-            System.err.println("Failed to serialize plan JSON: " + e.getMessage());
+            System.err.println("Failed to serialize weekly plan JSON: " + e.getMessage());
         }
 
-        DietPlan dietPlan = new DietPlan(user, summary.toString(), profile.getBmi(), profile.getHealthCondition());
+        DietPlan dietPlan = new DietPlan(user, "Weekly Meal Plan", profile.getBmi(), profile.getHealthCondition());
         dietPlan.setPlanJson(planJson);
 
         // All plans are set to PENDING for the nutritionist (Admin) to review

@@ -3,6 +3,7 @@ package com.nutrition.dss.service;
 import com.nutrition.dss.config.GroqConfig;
 import com.nutrition.dss.dto.DietOutputDTO;
 import com.nutrition.dss.dto.FoodItemDTO;
+import com.nutrition.dss.dto.WeeklyPlanDTO;
 import com.nutrition.dss.model.HealthProfile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -55,12 +56,12 @@ public class GroqService {
     }
 
     /**
-     * Re-generate or filter the diet plan using LLM based on BMI and Allergies.
-     * Returns a new DietOutputDTO parsed from the LLM's JSON response.
+     * Generate a weekly diet plan using LLM based on BMI and Allergies.
+     * Returns a new WeeklyPlanDTO parsed from the LLM's JSON response.
      */
-    public DietOutputDTO generateLLMDietPlan(DietOutputDTO baseOutput, HealthProfile profile) {
+    public WeeklyPlanDTO generateWeeklyDietPlan(DietOutputDTO baseOutput, HealthProfile profile) {
         if (!isAvailable()) {
-            return baseOutput; // Fallback to rule engine if LLM unavailable
+            return null; // Fallback to rule engine if LLM unavailable
         }
 
         try {
@@ -68,13 +69,13 @@ public class GroqService {
             String jsonResponse = callGroqApiForJson(prompt);
             
             if (jsonResponse != null) {
-                // Parse the JSON string back into a DietOutputDTO
-                return objectMapper.readValue(jsonResponse, DietOutputDTO.class);
+                // Parse the JSON string back into a WeeklyPlanDTO
+                return objectMapper.readValue(jsonResponse, WeeklyPlanDTO.class);
             }
         } catch (Exception e) {
-            System.err.println("Groq Diet Generation failed: " + e.getMessage());
+            System.err.println("Groq Weekly Diet Generation failed: " + e.getMessage());
         }
-        return baseOutput; // Fallback on failure
+        return null; // Fallback on failure
     }
 
     private String buildRefinementPrompt(DietOutputDTO output, HealthProfile profile) {
@@ -111,7 +112,7 @@ public class GroqService {
         try {
             String basePlanJson = objectMapper.writeValueAsString(output);
             return String.format("""
-                You are a professional clinical nutritionist. Your task is to generate a personalized diet plan based on the provided patient profile and a base rule-engine plan.
+                You are a professional clinical nutritionist. Your task is to generate a personalized 7-day meal plan based on the provided patient profile and a base rule-engine plan.
                 
                 Patient Profile:
                 - Age: %d, Gender: %s
@@ -126,9 +127,20 @@ public class GroqService {
                 Instructions:
                 1. Review the base plan.
                 2. STRICTLY REMOVE any foods the patient is allergic to from all categories.
-                3. Adjust the Recommended, Limited, and Avoid lists based on their BMI and conditions. For example, if obese, move high-calorie foods to Limited or Avoid.
-                4. You may rewrite the 'justification' field for foods to explain why you kept/moved them based on BMI or allergies.
-                5. Return the result STRICTLY as a valid JSON object matching the exact structure of the input Base Plan JSON (containing 'recommended', 'limited', and 'avoid' arrays of food objects). Do not include any markdown formatting, backticks, or explanatory text outside the JSON object.
+                3. Create a 7-day meal plan containing breakfast, lunch, and dinner for each day ("Monday", "Tuesday", etc.).
+                4. Each meal must include a 'name' and a 'description'.
+                5. Return the result STRICTLY as a valid JSON object matching this structure exactly:
+                {
+                  "days": [
+                    {
+                      "day": "Monday",
+                      "breakfast": { "name": "...", "description": "..." },
+                      "lunch": { "name": "...", "description": "..." },
+                      "dinner": { "name": "...", "description": "..." }
+                    }
+                  ]
+                }
+                Do not include any markdown formatting, backticks, or explanatory text outside the JSON object.
                 """,
                     profile.getAge(), profile.getGender(),
                     profile.getBmi(), profile.getBMICategory(),

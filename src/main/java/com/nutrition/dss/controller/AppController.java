@@ -1,6 +1,7 @@
 package com.nutrition.dss.controller;
 
 import com.nutrition.dss.model.*;
+import com.nutrition.dss.dto.WeeklyPlanDTO;
 import com.nutrition.dss.service.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -142,18 +143,16 @@ public class AppController {
 
         HealthProfile profile = profileOpt.get();
 
-        // Run the rule engine
-        Map<String, List<FoodItem>> plan = ruleEngineService.generateDietPlan(profile);
+        // Run the rule engine / LLM to generate a weekly plan
+        WeeklyPlanDTO weeklyPlan = ruleEngineService.generateWeeklyPlan(profile);
 
         // Save the plan to history
-        ruleEngineService.savePlan(user, plan, profile);
+        ruleEngineService.saveWeeklyPlan(user, weeklyPlan, profile);
 
         // Pass results to the HTML page
         model.addAttribute("user", user);
         model.addAttribute("profile", profile);
-        model.addAttribute("recommended", plan.get("RECOMMENDED"));
-        model.addAttribute("limited", plan.get("LIMITED"));
-        model.addAttribute("avoid", plan.get("AVOID"));
+        model.addAttribute("weeklyPlan", weeklyPlan);
         model.addAttribute("groqAvailable", groqService.isAvailable());
 
         return "results";

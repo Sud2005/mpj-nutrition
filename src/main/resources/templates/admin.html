@@ -248,7 +248,7 @@
         <div class="card" style="grid-column: 1 / -1;">
             <div class="card-header">
                 <h2>🩺 Review Pending Diet Plans</h2>
-                <p>Approve or reject LLM-generated plans</p>
+                <p>Approve or reject suggested plans</p>
             </div>
 
             <div th:if="${pendingPlans == null || pendingPlans.isEmpty()}" class="alert alert-success">
@@ -277,7 +277,7 @@
                             <td th:text="${plan.formattedDate}">Date</td>
                             <td>
                                 <div style="max-height: 100px; overflow-y: auto; font-size: 0.9em; max-width: 300px;">
-                                    <pre th:text="${plan.planSummary}" style="white-space: pre-wrap; font-family: inherit; margin: 0;"></pre>
+                                    <pre th:text="${plan.planJson}" style="white-space: pre-wrap; font-family: inherit; margin: 0;"></pre>
                                 </div>
                             </td>
                             <td>

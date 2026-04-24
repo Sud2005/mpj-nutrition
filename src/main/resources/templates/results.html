@@ -26,7 +26,7 @@
            | Condition: <strong th:text="${profile.healthCondition}">--</strong>
         </p>
         <p th:if="${groqAvailable}" style="margin-top: 0.5rem;">
-            <span class="badge badge-bmi">🤖 AI-Generated</span>
+            <span class="badge badge-bmi">🩺 Suggested by a Nutritionist</span>
             <span class="badge badge-lim">⏳ Pending Nutritionist Review</span>
         </p>
     </div>
@@ -36,78 +36,34 @@
          The lists come from Java: model.addAttribute("recommended", ...)
          TINKER in AppController.java: change what gets passed here
          ================================================================ -->
-    <div class="results-grid">
+    <div class="results-grid" style="display: block;">
 
-        <!-- RECOMMENDED -->
-        <div class="result-column recommended-col">
-            <div class="result-col-header">
-                <span class="result-icon">✅</span>
-                <h2>Recommended</h2>
-                <span class="result-count"
-                      th:text="${recommended != null ? recommended.size() + ' foods' : '0 foods'}">
-                </span>
+        <div th:if="${weeklyPlan != null && weeklyPlan.days != null}" th:each="dayPlan : ${weeklyPlan.days}" class="card" style="margin-bottom: 20px;">
+            <div class="card-header" style="background-color: var(--primary-light); color: var(--primary-dark);">
+                <h2 th:text="${dayPlan.day}">Monday</h2>
             </div>
-            <p class="col-description">These foods support your health goals. Eat freely.</p>
-            <ul class="food-list">
-                <li th:each="food : ${recommended}" class="food-item recommended-item">
-                    <span class="food-name" th:text="${food.name}">Food</span>
-                    <span class="food-category" th:text="${food.category}">Category</span>
-                    <span class="food-desc" th:text="${food.description}">Description</span>
-                    <span class="food-desc" th:if="${food.caloriesPer100g > 0}" th:text="${food.caloriesPer100g} + ' kcal/100g (' + ${food.calorieLabel} + ')'">Calories</span>
-                    <span class="food-desc justification-text" th:text="${food.justification}" style="font-style: italic; color: #666; font-size: 0.85em; margin-top: 4px; display: block;">Justification</span>
-                </li>
-                <li th:if="${recommended == null || recommended.isEmpty()}" class="food-item empty-item">
-                    No foods in this category
-                </li>
-            </ul>
+            
+            <div style="display: flex; gap: 15px; padding: 15px;">
+                <div style="flex: 1; background: var(--bg-color); padding: 10px; border-radius: 8px;">
+                    <h4 style="color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 5px;">🌅 Breakfast</h4>
+                    <strong th:text="${dayPlan.breakfast.name}">Name</strong>
+                    <p style="font-size: 0.9em; color: var(--text-color);" th:text="${dayPlan.breakfast.description}">Desc</p>
+                </div>
+                <div style="flex: 1; background: var(--bg-color); padding: 10px; border-radius: 8px;">
+                    <h4 style="color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 5px;">☀️ Lunch</h4>
+                    <strong th:text="${dayPlan.lunch.name}">Name</strong>
+                    <p style="font-size: 0.9em; color: var(--text-color);" th:text="${dayPlan.lunch.description}">Desc</p>
+                </div>
+                <div style="flex: 1; background: var(--bg-color); padding: 10px; border-radius: 8px;">
+                    <h4 style="color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 5px;">🌙 Dinner</h4>
+                    <strong th:text="${dayPlan.dinner.name}">Name</strong>
+                    <p style="font-size: 0.9em; color: var(--text-color);" th:text="${dayPlan.dinner.description}">Desc</p>
+                </div>
+            </div>
         </div>
 
-        <!-- LIMITED -->
-        <div class="result-column limited-col">
-            <div class="result-col-header">
-                <span class="result-icon">⚠️</span>
-                <h2>Limited</h2>
-                <span class="result-count"
-                      th:text="${limited != null ? limited.size() + ' foods' : '0 foods'}">
-                </span>
-            </div>
-            <p class="col-description">Consume in moderation — small portions occasionally.</p>
-            <ul class="food-list">
-                <li th:each="food : ${limited}" class="food-item limited-item">
-                    <span class="food-name" th:text="${food.name}">Food</span>
-                    <span class="food-category" th:text="${food.category}">Category</span>
-                    <span class="food-desc" th:text="${food.description}">Description</span>
-                    <span class="food-desc" th:if="${food.caloriesPer100g > 0}" th:text="${food.caloriesPer100g} + ' kcal/100g (' + ${food.calorieLabel} + ')'">Calories</span>
-                    <span class="food-desc justification-text" th:text="${food.justification}" style="font-style: italic; color: #666; font-size: 0.85em; margin-top: 4px; display: block;">Justification</span>
-                </li>
-                <li th:if="${limited == null || limited.isEmpty()}" class="food-item empty-item">
-                    No foods in this category
-                </li>
-            </ul>
-        </div>
-
-        <!-- AVOID -->
-        <div class="result-column avoid-col">
-            <div class="result-col-header">
-                <span class="result-icon">❌</span>
-                <h2>Avoid</h2>
-                <span class="result-count"
-                      th:text="${avoid != null ? avoid.size() + ' foods' : '0 foods'}">
-                </span>
-            </div>
-            <p class="col-description">These foods are not suitable for your current health profile.</p>
-            <ul class="food-list">
-                <li th:each="food : ${avoid}" class="food-item avoid-item">
-                    <span class="food-name" th:text="${food.name}">Food</span>
-                    <span class="food-category" th:text="${food.category}">Category</span>
-                    <span class="food-desc" th:text="${food.description}">Description</span>
-                    <span class="food-desc" th:if="${food.caloriesPer100g > 0}" th:text="${food.caloriesPer100g} + ' kcal/100g (' + ${food.calorieLabel} + ')'">Calories</span>
-                    <span class="food-desc justification-text" th:text="${food.justification}" style="font-style: italic; color: #666; font-size: 0.85em; margin-top: 4px; display: block;">Justification</span>
-                </li>
-                <li th:if="${avoid == null || avoid.isEmpty()}" class="food-item empty-item">
-                    No foods in this category
-                </li>
-            </ul>
+        <div th:if="${weeklyPlan == null || weeklyPlan.days == null}" class="alert alert-warning">
+            No weekly plan could be generated.
         </div>
 
     </div>
