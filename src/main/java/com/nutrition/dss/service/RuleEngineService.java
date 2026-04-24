@@ -16,6 +16,7 @@ import java.util.*;
  */
 @Service
 public class RuleEngineService {
+    private static final double WEIGHT_STABILITY_THRESHOLD_KG = 0.1;
 
     private final FoodItemRepository foodItemRepository;
     private final DietaryRuleRepository dietaryRuleRepository;
@@ -206,7 +207,7 @@ public class RuleEngineService {
             double start = chronological.get(0).getWeightKg();
             double latest = chronological.get(chronological.size() - 1).getWeightKg();
             double delta = latest - start;
-            if (Math.abs(delta) < 0.1) {
+            if (Math.abs(delta) < WEIGHT_STABILITY_THRESHOLD_KG) {
                 context.append("Trend: weight stable.");
             } else if (delta > 0) {
                 context.append(String.format("Trend: gained %.1f kg.", delta));

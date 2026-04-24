@@ -175,6 +175,7 @@ public class GroqService {
             return objectMapper.treeToValue(objectMapper.createObjectNode().set("days", nestedDays), WeeklyPlanDTO.class);
         }
 
+        System.err.println("Groq response parsed but no usable 'days' array was found.");
         return null;
     }
 
