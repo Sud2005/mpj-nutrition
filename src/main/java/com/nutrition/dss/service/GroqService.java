@@ -5,6 +5,7 @@ import com.nutrition.dss.dto.DietOutputDTO;
 import com.nutrition.dss.dto.FoodItemDTO;
 import com.nutrition.dss.dto.WeeklyPlanDTO;
 import com.nutrition.dss.model.HealthProfile;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -59,18 +60,17 @@ public class GroqService {
      * Generate a weekly diet plan using LLM based on BMI and Allergies.
      * Returns a new WeeklyPlanDTO parsed from the LLM's JSON response.
      */
-    public WeeklyPlanDTO generateWeeklyDietPlan(DietOutputDTO baseOutput, HealthProfile profile) {
+    public WeeklyPlanDTO generateWeeklyDietPlan(DietOutputDTO baseOutput, HealthProfile profile, String weightTrendContext) {
         if (!isAvailable()) {
             return null; // Fallback to rule engine if LLM unavailable
         }
 
         try {
-            String prompt = buildGenerationPrompt(baseOutput, profile);
+            String prompt = buildGenerationPrompt(baseOutput, profile, weightTrendContext);
             String jsonResponse = callGroqApiForJson(prompt);
             
             if (jsonResponse != null) {
-                // Parse the JSON string back into a WeeklyPlanDTO
-                return objectMapper.readValue(jsonResponse, WeeklyPlanDTO.class);
+                return parseWeeklyPlan(jsonResponse);
             }
         } catch (Exception e) {
             System.err.println("Groq Weekly Diet Generation failed: " + e.getMessage());
@@ -108,7 +108,7 @@ public class GroqService {
                 recommended, limited, avoid);
     }
 
-    private String buildGenerationPrompt(DietOutputDTO output, HealthProfile profile) {
+    private String buildGenerationPrompt(DietOutputDTO output, HealthProfile profile, String weightTrendContext) {
         try {
             String basePlanJson = objectMapper.writeValueAsString(output);
             return String.format("""
@@ -116,10 +116,13 @@ public class GroqService {
                 
                 Patient Profile:
                 - Age: %d, Gender: %s
+                - Height: %.1f cm
+                - Weight: %.1f kg
                 - BMI: %.1f (%s)
                 - Health Conditions: %s
                 - Dietary Preference: %s
                 - Allergies: %s
+                - Weight Trend Context: %s
                 
                 Base Rule-Engine Plan (JSON):
                 %s
@@ -127,9 +130,10 @@ public class GroqService {
                 Instructions:
                 1. Review the base plan.
                 2. STRICTLY REMOVE any foods the patient is allergic to from all categories.
-                3. Create a 7-day meal plan containing breakfast, lunch, and dinner for each day ("Monday", "Tuesday", etc.).
-                4. Each meal must include a 'name' and a 'description'.
-                5. Return the result STRICTLY as a valid JSON object matching this structure exactly:
+                3. Use current BMI and weight-trend context to tune calorie density and meal composition.
+                4. Create a 7-day meal plan containing breakfast, lunch, and dinner for each day ("Monday", "Tuesday", etc.).
+                5. Each meal must include a 'name' and a 'description'.
+                6. Return the result STRICTLY as a valid JSON object matching this structure exactly:
                 {
                   "days": [
                     {
@@ -143,14 +147,34 @@ public class GroqService {
                 Do not include any markdown formatting, backticks, or explanatory text outside the JSON object.
                 """,
                     profile.getAge(), profile.getGender(),
+                    profile.getHeightCm(), profile.getWeightKg(),
                     profile.getBmi(), profile.getBMICategory(),
                     profile.getHealthCondition(),
                     profile.getDietaryPreference(),
                     profile.getAllergies() == null || profile.getAllergies().isEmpty() ? "None" : profile.getAllergies(),
+                    weightTrendContext == null || weightTrendContext.isBlank() ? "No historical measurements available." : weightTrendContext,
                     basePlanJson);
         } catch (Exception e) {
             return "{}";
         }
+    }
+
+    private WeeklyPlanDTO parseWeeklyPlan(String jsonResponse) throws Exception {
+        JsonNode root = objectMapper.readTree(jsonResponse);
+        if (root.has("days") && root.get("days").isArray()) {
+            return objectMapper.treeToValue(root, WeeklyPlanDTO.class);
+        }
+
+        if (root.has("weeklyPlan") && root.get("weeklyPlan").has("days")) {
+            return objectMapper.treeToValue(root.get("weeklyPlan"), WeeklyPlanDTO.class);
+        }
+
+        JsonNode nestedDays = root.findValue("days");
+        if (nestedDays != null && nestedDays.isArray()) {
+            return objectMapper.treeToValue(objectMapper.createObjectNode().set("days", nestedDays), WeeklyPlanDTO.class);
+        }
+
+        return null;
     }
 
     private String callGroqApi(String prompt) {

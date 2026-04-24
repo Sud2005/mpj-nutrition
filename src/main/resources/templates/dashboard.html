@@ -168,6 +168,42 @@
                 <a href="/generate" class="btn btn-success btn-full">Generate Diet Plan</a>
             </div>
 
+            <div class="card" th:if="${profile != null}">
+                <h3>📡 Smart Device Placeholder</h3>
+                <p class="device-note" th:text="${devicePlaceholderStatus}">
+                    Coming soon: smart device sync for automatic height/weight capture.
+                </p>
+                <button class="btn btn-outline btn-full" type="button" disabled>Device Sync (Coming Soon)</button>
+            </div>
+
+            <div class="card weight-trend-card" th:if="${profile != null}">
+                <h3>📉 Weight Tracking</h3>
+                <p>Recent measurements used to adjust future diet generations.</p>
+
+                <div th:if="${weightHistory == null || weightHistory.isEmpty()}" class="empty-weight-state">
+                    No historical measurements yet. Save your profile after weight changes to build the trend.
+                </div>
+
+                <table class="weight-history-table" th:if="${weightHistory != null && !weightHistory.isEmpty()}">
+                    <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Weight (kg)</th>
+                        <th>BMI</th>
+                        <th>Source</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="measurement : ${weightHistory}">
+                        <td th:text="${measurement.formattedMeasuredAt}">date</td>
+                        <td th:text="${measurement.weightKg}">0.0</td>
+                        <td th:text="${measurement.bmi}">0.0</td>
+                        <td th:text="${measurement.source}">MANUAL_PROFILE_UPDATE</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
             <!-- Prompt to fill profile if not done -->
             <div class="card" th:if="${profile == null}">
                 <h3>👈 Start Here</h3>

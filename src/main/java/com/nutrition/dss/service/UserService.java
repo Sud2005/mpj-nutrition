@@ -3,11 +3,14 @@ package com.nutrition.dss.service;
 import com.nutrition.dss.dto.UserDTO;
 import com.nutrition.dss.model.HealthProfile;
 import com.nutrition.dss.model.User;
+import com.nutrition.dss.model.WeightMeasurement;
 import com.nutrition.dss.repository.HealthProfileRepository;
 import com.nutrition.dss.repository.UserRepository;
+import com.nutrition.dss.repository.WeightMeasurementRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -19,13 +22,16 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final HealthProfileRepository healthProfileRepository;
+    private final WeightMeasurementRepository weightMeasurementRepository;
     private final PasswordEncoder passwordEncoder;
 
     public UserService(UserRepository userRepository,
                        HealthProfileRepository healthProfileRepository,
+                       WeightMeasurementRepository weightMeasurementRepository,
                        PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.healthProfileRepository = healthProfileRepository;
+        this.weightMeasurementRepository = weightMeasurementRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -72,7 +78,9 @@ public class UserService {
         profile.setAllergies(allergies != null ? allergies : "");
         profile.calculateBMI();
 
-        return healthProfileRepository.save(profile);
+        HealthProfile saved = healthProfileRepository.save(profile);
+        saveWeightMeasurementSnapshot(user, saved, "MANUAL_PROFILE_UPDATE");
+        return saved;
     }
 
     public Optional<HealthProfile> getHealthProfile(User user) {
@@ -83,9 +91,34 @@ public class UserService {
         return userRepository.findById(id);
     }
 
+    public List<WeightMeasurement> getRecentWeightMeasurements(User user) {
+        return weightMeasurementRepository.findTop10ByUserOrderByMeasuredAtDesc(user);
+    }
+
     /** Convert User entity to DTO (no password exposed) */
     public UserDTO toDTO(User user) {
         return new UserDTO(user.getId(), user.getFullName(), user.getEmail(),
                 user.getRole(), user.getCreatedAt());
+    }
+
+    private void saveWeightMeasurementSnapshot(User user, HealthProfile profile, String source) {
+        Optional<WeightMeasurement> latestOpt = weightMeasurementRepository.findFirstByUserOrderByMeasuredAtDesc(user);
+        if (latestOpt.isPresent()) {
+            WeightMeasurement latest = latestOpt.get();
+            boolean sameHeight = Math.abs(latest.getHeightCm() - profile.getHeightCm()) < 0.01;
+            boolean sameWeight = Math.abs(latest.getWeightKg() - profile.getWeightKg()) < 0.01;
+            if (sameHeight && sameWeight) {
+                return;
+            }
+        }
+
+        WeightMeasurement measurement = new WeightMeasurement(
+                user,
+                profile.getHeightCm(),
+                profile.getWeightKg(),
+                profile.getBmi(),
+                source
+        );
+        weightMeasurementRepository.save(measurement);
     }
 }

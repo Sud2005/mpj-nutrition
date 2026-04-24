@@ -20,6 +20,7 @@ public class RuleEngineService {
     private final FoodItemRepository foodItemRepository;
     private final DietaryRuleRepository dietaryRuleRepository;
     private final DietPlanRepository dietPlanRepository;
+    private final WeightMeasurementRepository weightMeasurementRepository;
     private final RuleEvaluatorService ruleEvaluatorService;
     private final GroqService groqService;
     private final ObjectMapper objectMapper;
@@ -27,11 +28,13 @@ public class RuleEngineService {
     public RuleEngineService(FoodItemRepository foodItemRepository,
                              DietaryRuleRepository dietaryRuleRepository,
                              DietPlanRepository dietPlanRepository,
+                             WeightMeasurementRepository weightMeasurementRepository,
                              RuleEvaluatorService ruleEvaluatorService,
                              GroqService groqService) {
         this.foodItemRepository = foodItemRepository;
         this.dietaryRuleRepository = dietaryRuleRepository;
         this.dietPlanRepository = dietPlanRepository;
+        this.weightMeasurementRepository = weightMeasurementRepository;
         this.ruleEvaluatorService = ruleEvaluatorService;
         this.groqService = groqService;
         this.objectMapper = new ObjectMapper();
@@ -136,7 +139,8 @@ public class RuleEngineService {
         );
 
         if (groqService.isAvailable()) {
-            WeeklyPlanDTO llmPlan = groqService.generateWeeklyDietPlan(baseDto, profile);
+            String weightTrendContext = buildWeightTrendContext(profile);
+            WeeklyPlanDTO llmPlan = groqService.generateWeeklyDietPlan(baseDto, profile, weightTrendContext);
             if (llmPlan != null && llmPlan.getDays() != null && !llmPlan.getDays().isEmpty()) {
                 return llmPlan;
             }
@@ -173,6 +177,42 @@ public class RuleEngineService {
         }
         
         return new WeeklyPlanDTO(days);
+    }
+
+    private String buildWeightTrendContext(HealthProfile profile) {
+        if (profile == null || profile.getUser() == null) {
+            return "No historical measurements available.";
+        }
+
+        List<WeightMeasurement> recent = weightMeasurementRepository.findTop5ByUserOrderByMeasuredAtDesc(profile.getUser());
+        if (recent.isEmpty()) {
+            return "No historical measurements available.";
+        }
+
+        List<WeightMeasurement> chronological = new ArrayList<>(recent);
+        Collections.reverse(chronological);
+
+        StringBuilder context = new StringBuilder("Recent measurements (oldest to newest): ");
+        for (WeightMeasurement m : chronological) {
+            context.append(String.format("[%.1fkg, BMI %.1f at %s] ",
+                    m.getWeightKg(), m.getBmi(), m.getFormattedMeasuredAt()));
+        }
+
+        if (chronological.size() >= 2) {
+            double start = chronological.get(0).getWeightKg();
+            double latest = chronological.get(chronological.size() - 1).getWeightKg();
+            double delta = latest - start;
+            if (Math.abs(delta) < 0.1) {
+                context.append("Trend: weight stable.");
+            } else if (delta > 0) {
+                context.append(String.format("Trend: gained %.1f kg.", delta));
+            } else {
+                context.append(String.format("Trend: lost %.1f kg.", Math.abs(delta)));
+            }
+        } else {
+            context.append("Trend: only one data point.");
+        }
+        return context.toString();
     }
 
     /**

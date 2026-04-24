@@ -99,6 +99,8 @@ public class AppController {
 
         var profileOpt = userService.getHealthProfile(user);
         profileOpt.ifPresent(p -> model.addAttribute("profile", p));
+        model.addAttribute("weightHistory", userService.getRecentWeightMeasurements(user));
+        model.addAttribute("devicePlaceholderStatus", "Coming soon: smart device sync for automatic height/weight capture.");
 
         return "dashboard";
     }

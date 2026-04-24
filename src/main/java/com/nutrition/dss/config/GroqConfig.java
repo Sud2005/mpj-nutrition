@@ -12,7 +12,7 @@ public class GroqConfig {
     private String model = "llama-3.1-8b-instant";
     private String baseUrl = "https://api.groq.com/openai/v1";
     private double temperature = 0.7;
-    private boolean enabled = false;
+    private boolean enabled = true;
 
     public boolean isConfigured() {
         return enabled && apiKey != null && !apiKey.equals("not-configured") && !apiKey.isBlank();

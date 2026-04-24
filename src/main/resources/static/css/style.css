@@ -253,6 +253,48 @@ a:hover { text-decoration: underline; }
 .generate-card h3 { margin-bottom: 0.5rem; }
 .generate-card p  { color: #718096; font-size: 0.9rem; margin-bottom: 1rem; }
 
+.device-note {
+    color: #718096;
+    font-size: 0.9rem;
+    margin: 0.4rem 0 0.9rem;
+}
+
+.weight-trend-card h3 { margin-bottom: 0.4rem; }
+.weight-trend-card p {
+    color: #718096;
+    font-size: 0.88rem;
+    margin-bottom: 0.7rem;
+}
+
+.weight-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+
+.weight-history-table th,
+.weight-history-table td {
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.45rem 0.35rem;
+    text-align: left;
+}
+
+.weight-history-table th {
+    color: #4a5568;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.empty-weight-state {
+    background: #f7fafc;
+    border: 1px dashed #cbd5e0;
+    border-radius: 8px;
+    padding: 0.7rem;
+    color: #718096;
+    font-size: 0.83rem;
+}
+
 /* ============================================================
    HERO (Home page)
    ============================================================ */
