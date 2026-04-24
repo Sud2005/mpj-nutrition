@@ -20,12 +20,31 @@
     <div th:if="${param.foodAdded}" class="alert alert-success">✅ Food item added!</div>
     <div th:if="${param.ruleAdded}" class="alert alert-success">✅ Dietary rule added!</div>
 
+    <!-- ============================================================
+         DASHBOARD STATISTICS
+         ============================================================ -->
+    <div class="dashboard-stats" th:if="${dashboard != null}">
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-value" th:text="${dashboard.totalUsers}">0</div>
+            <div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📋</div>
+            <div class="stat-value" th:text="${dashboard.totalDietPlans}">0</div>
+            <div class="stat-label">Diet Plans Generated</div>
+        </div>
+        <div class="stat-card" th:each="entry : ${dashboard.bmiDistribution}">
+            <div class="stat-icon">📊</div>
+            <div class="stat-value" th:text="${entry.value}">0</div>
+            <div class="stat-label" th:text="${entry.key}">BMI Category</div>
+        </div>
+    </div>
+
     <div class="admin-grid">
 
         <!-- ============================================================
              FOOD ITEMS PANEL
-             TINKER: Add new food categories in the <select> below
-             AND add the same category in DataSeeder.java
              ============================================================ -->
         <div class="card">
             <div class="card-header">
@@ -40,22 +59,50 @@
                     <label>Food Name</label>
                     <input type="text" name="name" placeholder="e.g. Quinoa" required>
                 </div>
-                <div class="form-group">
-                    <label>Category</label>
-                    <select name="category" required>
-                        <!-- TINKER: Add new categories here -->
-                        <option value="GRAINS">Grains</option>
-                        <option value="PROTEINS">Proteins</option>
-                        <option value="VEGETABLES">Vegetables</option>
-                        <option value="FRUITS">Fruits</option>
-                        <option value="DAIRY">Dairy</option>
-                        <option value="FATS">Fats</option>
-                        <option value="SWEETS">Sweets</option>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select name="category" required>
+                            <option value="GRAINS">Grains</option>
+                            <option value="PROTEINS">Proteins</option>
+                            <option value="VEGETABLES">Vegetables</option>
+                            <option value="FRUITS">Fruits</option>
+                            <option value="DAIRY">Dairy</option>
+                            <option value="FATS">Fats</option>
+                            <option value="SWEETS">Sweets</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select name="type">
+                            <option value="VEG">Vegetarian</option>
+                            <option value="NON_VEG">Non-Vegetarian</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Description (optional)</label>
                     <input type="text" name="description" placeholder="Brief description">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Calories/100g</label>
+                        <input type="number" name="caloriesPer100g" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Protein (g)</label>
+                        <input type="number" name="protein" value="0" step="0.1" min="0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Carbs (g)</label>
+                        <input type="number" name="carbs" value="0" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Fats (g)</label>
+                        <input type="number" name="fats" value="0" step="0.1" min="0">
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary">Add Food</button>
             </form>
@@ -68,7 +115,9 @@
                             <th>ID</th>
                             <th>Name</th>
                             <th>Category</th>
-                            <th>Description</th>
+                            <th>Type</th>
+                            <th>Kcal</th>
+                            <th>P / C / F</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -77,7 +126,9 @@
                             <td th:text="${food.id}">1</td>
                             <td th:text="${food.name}">Name</td>
                             <td><span class="badge-category" th:text="${food.category}">Cat</span></td>
-                            <td th:text="${food.description}">Desc</td>
+                            <td th:text="${food.type}">VEG</td>
+                            <td th:text="${food.caloriesPer100g}">0</td>
+                            <td th:text="${food.protein + ' / ' + food.carbs + ' / ' + food.fats}">0/0/0</td>
                             <td>
                                 <form th:action="'/admin/food/delete/' + ${food.id}" method="post"
                                       style="display:inline"
@@ -93,9 +144,6 @@
 
         <!-- ============================================================
              DIETARY RULES PANEL
-             TINKER: Change priorities to see rule conflicts resolve differently
-             Try: add DIABETES + GRAINS + RECOMMENDED priority 20
-             → Overrides the existing "LIMITED" rule for diabetics + grains
              ============================================================ -->
         <div class="card">
             <div class="card-header">
@@ -139,9 +187,17 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Priority (1-10, higher wins)</label>
+                        <label>Priority (1-20, higher wins)</label>
                         <input type="number" name="priority" min="1" max="20" value="5" required>
                     </div>
+                </div>
+                <div class="form-group">
+                    <label>Condition Expression (optional, e.g. "BMI > 25")</label>
+                    <input type="text" name="conditionExpression" placeholder="e.g. BMI >= 30">
+                </div>
+                <div class="form-group">
+                    <label>Action Description (optional)</label>
+                    <input type="text" name="actionType" placeholder="e.g. Restrict high-fat foods">
                 </div>
                 <button type="submit" class="btn btn-primary">Add Rule</button>
             </form>
@@ -153,9 +209,10 @@
                         <tr>
                             <th>ID</th>
                             <th>Condition</th>
-                            <th>Food Category</th>
+                            <th>Category</th>
                             <th>Recommendation</th>
                             <th>Priority</th>
+                            <th>Expression</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -171,11 +228,64 @@
                                 </span>
                             </td>
                             <td th:text="${rule.priority}">5</td>
+                            <td th:text="${rule.conditionExpression}" style="font-size:0.8em;color:#666;">—</td>
                             <td>
                                 <form th:action="'/admin/rule/delete/' + ${rule.id}" method="post"
                                       style="display:inline"
                                       onsubmit="return confirm('Delete this rule?')">
                                     <button type="submit" class="btn-delete">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             PENDING DIET PLANS PANEL
+             ============================================================ -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <div class="card-header">
+                <h2>🩺 Review Pending Diet Plans</h2>
+                <p>Approve or reject LLM-generated plans</p>
+            </div>
+
+            <div th:if="${pendingPlans == null || pendingPlans.isEmpty()}" class="alert alert-success">
+                🎉 No pending plans to review!
+            </div>
+
+            <div class="admin-table-wrap" th:if="${pendingPlans != null && !pendingPlans.isEmpty()}">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Plan ID</th>
+                            <th>User Name</th>
+                            <th>BMI</th>
+                            <th>Condition</th>
+                            <th>Generated At</th>
+                            <th>Summary</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="plan : ${pendingPlans}">
+                            <td th:text="${plan.id}">1</td>
+                            <td th:text="${plan.user.fullName}">User</td>
+                            <td th:text="${plan.bmiAtGeneration}">22.0</td>
+                            <td th:text="${plan.conditionAtGeneration}">NONE</td>
+                            <td th:text="${plan.formattedDate}">Date</td>
+                            <td>
+                                <div style="max-height: 100px; overflow-y: auto; font-size: 0.9em; max-width: 300px;">
+                                    <pre th:text="${plan.planSummary}" style="white-space: pre-wrap; font-family: inherit; margin: 0;"></pre>
+                                </div>
+                            </td>
+                            <td>
+                                <form th:action="'/admin/plan/approve/' + ${plan.id}" method="post" style="display:inline">
+                                    <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                </form>
+                                <form th:action="'/admin/plan/reject/' + ${plan.id}" method="post" style="display:inline">
+                                    <button type="submit" class="btn btn-delete btn-sm" style="margin-top: 5px;">Reject</button>
                                 </form>
                             </td>
                         </tr>

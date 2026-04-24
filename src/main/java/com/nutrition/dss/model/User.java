@@ -1,18 +1,11 @@
 package com.nutrition.dss.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 /**
- * ============================================================
- *  PERSON 1 - MODEL LAYER
- *  This file defines the User entity (a table in the database).
- *  Each field = one column in the database.
- *
- *  HOW TO TINKER:
- *  - Add a new field like "phoneNumber" → it adds a column
- *  - Change validation logic in isValidPassword()
- *  - Add a new role like "NUTRITIONIST"
- * ============================================================
+ * User entity — stores authentication and profile data.
+ * Passwords are stored as BCrypt hashes.
  */
 @Entity
 @Table(name = "users")
@@ -22,8 +15,6 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ----- TINKER ZONE: Add/rename fields below -----
-
     @Column(nullable = false)
     private String fullName;
 
@@ -31,17 +22,24 @@ public class User {
     private String email;
 
     @Column(nullable = false)
-    private String password;  // stored as plain text for demo; hash in production
+    private String password; // BCrypt hashed
 
-    // Role is either "USER" or "ADMIN"
     @Column(nullable = false)
     private String role = "USER";
 
-    // ----- END TINKER ZONE -----
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-    // One user has one health profile
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private HealthProfile healthProfile;
+
+    // ---- Lifecycle ----
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+    }
 
     // ---- Constructors ----
     public User() {}
@@ -53,7 +51,7 @@ public class User {
         this.role = role;
     }
 
-    // ---- Simple helper ----
+    // ---- Helpers ----
     public boolean isAdmin() {
         return "ADMIN".equals(this.role);
     }
@@ -73,6 +71,9 @@ public class User {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     public HealthProfile getHealthProfile() { return healthProfile; }
     public void setHealthProfile(HealthProfile healthProfile) { this.healthProfile = healthProfile; }

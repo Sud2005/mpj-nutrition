@@ -43,6 +43,10 @@
                 <div class="history-badges">
                     <span class="badge badge-bmi" th:text="'BMI: ' + ${plan.bmiAtGeneration}">BMI</span>
                     <span class="badge badge-condition" th:text="${plan.conditionAtGeneration}">Condition</span>
+                    <span class="badge" th:text="${plan.approvalStatus}"
+                          th:classappend="${#strings.contains(plan.approvalStatus, 'APPROVED')} ? 'badge-rec' : 
+                                          (${#strings.contains(plan.approvalStatus, 'REJECTED')} ? 'badge-avoid' : 'badge-lim')">
+                    </span>
                 </div>
             </div>
 

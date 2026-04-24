@@ -1,71 +1,63 @@
 package com.nutrition.dss.service;
 
+import com.nutrition.dss.dto.UserDTO;
 import com.nutrition.dss.model.HealthProfile;
 import com.nutrition.dss.model.User;
 import com.nutrition.dss.repository.HealthProfileRepository;
 import com.nutrition.dss.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.util.Optional;
 
 /**
- * ============================================================
- *  PERSON 1 - SERVICE LAYER
- *  Handles user registration, login, and profile management.
- *
- *  HOW TO TINKER:
- *  - Add password validation rules in register()
- *    e.g. password must be 8+ characters
- *  - Add email format validation
- *  - Add account locking after 3 failed login attempts
- * ============================================================
+ * Handles user registration, login, and profile management.
+ * Passwords are BCrypt hashed.
  */
 @Service
 public class UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final HealthProfileRepository healthProfileRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private HealthProfileRepository healthProfileRepository;
+    public UserService(UserRepository userRepository,
+                       HealthProfileRepository healthProfileRepository,
+                       PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.healthProfileRepository = healthProfileRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
-    /**
-     * Register a new user.
-     * Returns the saved User, or throws an exception if email is taken.
-     *
-     * TINKER: Add password strength check here!
-     * e.g. if (password.length() < 8) throw new RuntimeException("Password too short");
-     */
+    /** Register a new user with BCrypt-hashed password */
     public User register(String fullName, String email, String password) {
-        // Check if email already exists
         if (userRepository.findByEmail(email).isPresent()) {
             throw new RuntimeException("Email already registered: " + email);
         }
+        if (password.length() < 6) {
+            throw new RuntimeException("Password must be at least 6 characters");
+        }
+        if (!email.contains("@")) {
+            throw new RuntimeException("Invalid email format");
+        }
 
-        // TINKER: Add validation
-        // if (password.length() < 6) throw new RuntimeException("Password must be 6+ characters");
-        // if (!email.contains("@")) throw new RuntimeException("Invalid email");
-
-        User user = new User(fullName, email, password, "USER");
+        User user = new User(fullName, email, passwordEncoder.encode(password), "USER");
         return userRepository.save(user);
     }
 
-    /**
-     * Login: find user by email + password.
-     * Returns the User if credentials match, or empty if not.
-     */
+    /** Login: find user by email, verify password with BCrypt */
     public Optional<User> login(String email, String password) {
-        return userRepository.findByEmailAndPassword(email, password);
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isPresent() && passwordEncoder.matches(password, userOpt.get().getPassword())) {
+            return userOpt;
+        }
+        return Optional.empty();
     }
 
-    /**
-     * Save or update a user's health profile.
-     * Automatically calculates BMI.
-     */
     public HealthProfile saveHealthProfile(User user, int age, String gender,
                                            double heightCm, double weightKg,
-                                           String activityLevel, String healthCondition) {
-        // Check if profile already exists
+                                           String activityLevel, String healthCondition,
+                                           String dietaryPreference, String allergies) {
         Optional<HealthProfile> existing = healthProfileRepository.findByUser(user);
         HealthProfile profile = existing.orElse(new HealthProfile());
 
@@ -76,21 +68,24 @@ public class UserService {
         profile.setWeightKg(weightKg);
         profile.setActivityLevel(activityLevel);
         profile.setHealthCondition(healthCondition);
-
-        // BMI is calculated here!
+        profile.setDietaryPreference(dietaryPreference);
+        profile.setAllergies(allergies != null ? allergies : "");
         profile.calculateBMI();
 
         return healthProfileRepository.save(profile);
     }
 
-    /**
-     * Get a user's health profile.
-     */
     public Optional<HealthProfile> getHealthProfile(User user) {
         return healthProfileRepository.findByUser(user);
     }
 
     public Optional<User> findById(Long id) {
         return userRepository.findById(id);
+    }
+
+    /** Convert User entity to DTO (no password exposed) */
+    public UserDTO toDTO(User user) {
+        return new UserDTO(user.getId(), user.getFullName(), user.getEmail(),
+                user.getRole(), user.getCreatedAt());
     }
 }

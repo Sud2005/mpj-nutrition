@@ -21,6 +21,9 @@ public interface DietaryRuleRepository extends JpaRepository<DietaryRule, Long> 
     // Find all rules for a given health condition
     List<DietaryRule> findByConditionOrderByPriorityDesc(String condition);
 
+    // Find rules for MULTIPLE health conditions
+    List<DietaryRule> findByConditionIn(List<String> conditions);
+
     // Find rules matching NONE (applies to everyone)
     List<DietaryRule> findByCondition(String condition);
 }

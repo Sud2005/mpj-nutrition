@@ -419,6 +419,27 @@ a:hover { text-decoration: underline; }
 .badge-avoid { background: #fed7d7; color: #742a2a; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 700; }
 
 /* ============================================================
+   ADMIN DASHBOARD STATS
+   ============================================================ */
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.2rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-top: 3px solid #276749;
+}
+.stat-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+.stat-value { font-size: 2rem; font-weight: 800; color: #276749; }
+.stat-label { font-size: 0.82rem; color: #718096; margin-top: 0.2rem; }
+
+/* ============================================================
    DISCLAIMER + FOOTER
    ============================================================ */
 .disclaimer-banner {

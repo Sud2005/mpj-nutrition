@@ -3,23 +3,8 @@ package com.nutrition.dss.model;
 import jakarta.persistence.*;
 
 /**
- * ============================================================
- *  PERSON 2 - FOOD & RULES LAYER
- *  A DietaryRule links a health condition to a food category
- *  and says what to do: RECOMMENDED, LIMITED, or AVOID.
- *
- *  Example rule:
- *    condition = "DIABETES"
- *    foodCategory = "SWEETS"
- *    recommendation = "AVOID"
- *    priority = 10
- *
- *  HOW TO TINKER:
- *  - Change "AVOID" to "LIMITED" for a rule → see it change on results
- *  - Add a new rule for "OBESITY" + "FATS" → "AVOID"
- *  - Change priority numbers to affect rule conflict resolution
- *  - Add a "reason" field to explain WHY a food is recommended
- * ============================================================
+ * DietaryRule entity — maps health conditions to food category recommendations.
+ * Supports dynamic condition expressions for the improved rule engine.
  */
 @Entity
 @Table(name = "dietary_rules")
@@ -29,34 +14,24 @@ public class DietaryRule {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ----- TINKER ZONE -----
-
-    // What health condition triggers this rule?
-    // Values: NONE, DIABETES, HYPERTENSION, OBESITY
-    // TINKER: Add new conditions matching HealthProfile.healthCondition
     @Column(nullable = false)
-    private String condition;
+    private String condition; // NONE, DIABETES, HYPERTENSION, OBESITY
 
-    // Which food category does this rule apply to?
-    // Values: GRAINS, PROTEINS, VEGETABLES, FRUITS, DAIRY, FATS, SWEETS
     @Column(nullable = false)
-    private String foodCategory;
+    private String foodCategory; // GRAINS, PROTEINS, VEGETABLES, FRUITS, DAIRY, FATS, SWEETS
 
-    // What should the user do with this food?
-    // Values: RECOMMENDED, LIMITED, AVOID
-    // TINKER: Change this and watch the results page update!
     @Column(nullable = false)
-    private String recommendation;
+    private String recommendation; // RECOMMENDED, LIMITED, AVOID
 
-    // Higher priority = this rule wins when two rules conflict
-    // TINKER: Change priority numbers to see different outcomes
     @Column(nullable = false)
     private int priority = 1;
 
-    // TINKER: Add a "reason" field to show WHY on the frontend
-    // private String reason;
+    // Dynamic rule expression: e.g. "BMI > 25", "diabetes = true AND age > 40"
+    @Column(length = 500)
+    private String conditionExpression;
 
-    // ----- END TINKER ZONE -----
+    // Generic action type for expression-based rules
+    private String actionType;
 
     // ---- Constructors ----
     public DietaryRule() {}
@@ -66,6 +41,16 @@ public class DietaryRule {
         this.foodCategory = foodCategory;
         this.recommendation = recommendation;
         this.priority = priority;
+    }
+
+    public DietaryRule(String condition, String foodCategory, String recommendation,
+                       int priority, String conditionExpression, String actionType) {
+        this.condition = condition;
+        this.foodCategory = foodCategory;
+        this.recommendation = recommendation;
+        this.priority = priority;
+        this.conditionExpression = conditionExpression;
+        this.actionType = actionType;
     }
 
     // ---- Getters & Setters ----
@@ -83,4 +68,10 @@ public class DietaryRule {
 
     public int getPriority() { return priority; }
     public void setPriority(int priority) { this.priority = priority; }
+
+    public String getConditionExpression() { return conditionExpression; }
+    public void setConditionExpression(String conditionExpression) { this.conditionExpression = conditionExpression; }
+
+    public String getActionType() { return actionType; }
+    public void setActionType(String actionType) { this.actionType = actionType; }
 }

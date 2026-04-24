@@ -25,6 +25,10 @@
               (<span th:text="${profile.BMICategory}">--</span>)
            | Condition: <strong th:text="${profile.healthCondition}">--</strong>
         </p>
+        <p th:if="${groqAvailable}" style="margin-top: 0.5rem;">
+            <span class="badge badge-bmi">🤖 AI-Generated</span>
+            <span class="badge badge-lim">⏳ Pending Nutritionist Review</span>
+        </p>
     </div>
 
     <!-- ================================================================
@@ -49,6 +53,8 @@
                     <span class="food-name" th:text="${food.name}">Food</span>
                     <span class="food-category" th:text="${food.category}">Category</span>
                     <span class="food-desc" th:text="${food.description}">Description</span>
+                    <span class="food-desc" th:if="${food.caloriesPer100g > 0}" th:text="${food.caloriesPer100g} + ' kcal/100g (' + ${food.calorieLabel} + ')'">Calories</span>
+                    <span class="food-desc justification-text" th:text="${food.justification}" style="font-style: italic; color: #666; font-size: 0.85em; margin-top: 4px; display: block;">Justification</span>
                 </li>
                 <li th:if="${recommended == null || recommended.isEmpty()}" class="food-item empty-item">
                     No foods in this category
@@ -71,6 +77,8 @@
                     <span class="food-name" th:text="${food.name}">Food</span>
                     <span class="food-category" th:text="${food.category}">Category</span>
                     <span class="food-desc" th:text="${food.description}">Description</span>
+                    <span class="food-desc" th:if="${food.caloriesPer100g > 0}" th:text="${food.caloriesPer100g} + ' kcal/100g (' + ${food.calorieLabel} + ')'">Calories</span>
+                    <span class="food-desc justification-text" th:text="${food.justification}" style="font-style: italic; color: #666; font-size: 0.85em; margin-top: 4px; display: block;">Justification</span>
                 </li>
                 <li th:if="${limited == null || limited.isEmpty()}" class="food-item empty-item">
                     No foods in this category
@@ -93,6 +101,8 @@
                     <span class="food-name" th:text="${food.name}">Food</span>
                     <span class="food-category" th:text="${food.category}">Category</span>
                     <span class="food-desc" th:text="${food.description}">Description</span>
+                    <span class="food-desc" th:if="${food.caloriesPer100g > 0}" th:text="${food.caloriesPer100g} + ' kcal/100g (' + ${food.calorieLabel} + ')'">Calories</span>
+                    <span class="food-desc justification-text" th:text="${food.justification}" style="font-style: italic; color: #666; font-size: 0.85em; margin-top: 4px; display: block;">Justification</span>
                 </li>
                 <li th:if="${avoid == null || avoid.isEmpty()}" class="food-item empty-item">
                     No foods in this category

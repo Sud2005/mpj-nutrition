@@ -2,7 +2,6 @@ package com.nutrition.dss.controller;
 
 import com.nutrition.dss.model.*;
 import com.nutrition.dss.service.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -11,42 +10,28 @@ import jakarta.servlet.http.HttpSession;
 import java.util.*;
 
 /**
- * ============================================================
- *  PERSON 4 - CONTROLLER LAYER
- *  Controllers handle HTTP requests and return web pages.
- *  Think of them as the "traffic director" of the app.
- *
- *  URL MAPPING (what URL → what method):
- *  GET  /           → home page
- *  GET  /register   → show register form
- *  POST /register   → process registration
- *  GET  /login      → show login form
- *  POST /login      → process login
- *  GET  /dashboard  → user dashboard
- *  POST /profile    → save health profile
- *  GET  /generate   → generate diet plan
- *  GET  /history    → view past plans
- *  GET  /logout     → logout
- *
- *  HOW TO TINKER:
- *  - Add a new page: add a @GetMapping + create an HTML file
- *  - Change redirect after login from /dashboard to /profile
- *  - Add a flash message on successful registration
- * ============================================================
+ * Main application controller for Thymeleaf pages.
+ * Handles registration, login, dashboard, diet generation, and history.
  */
 @Controller
 public class AppController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
+    private final RuleEngineService ruleEngineService;
+    private final GroqService groqService;
 
-    @Autowired
-    private RuleEngineService ruleEngineService;
+    public AppController(UserService userService,
+                         RuleEngineService ruleEngineService,
+                         GroqService groqService) {
+        this.userService = userService;
+        this.ruleEngineService = ruleEngineService;
+        this.groqService = groqService;
+    }
 
     // ===================== HOME =====================
     @GetMapping("/")
     public String home() {
-        return "index";  // shows index.html
+        return "index";
     }
 
     // ===================== REGISTER =====================
@@ -62,7 +47,6 @@ public class AppController {
                              Model model) {
         try {
             userService.register(fullName, email, password);
-            // TINKER: Change this redirect to go anywhere after registration
             return "redirect:/login?registered=true";
         } catch (RuntimeException e) {
             model.addAttribute("error", e.getMessage());
@@ -91,7 +75,6 @@ public class AppController {
             session.setAttribute("userName", user.getFullName());
             session.setAttribute("userRole", user.getRole());
 
-            // TINKER: Redirect admins to a different page
             if (user.isAdmin()) {
                 return "redirect:/admin";
             }
@@ -113,7 +96,6 @@ public class AppController {
 
         model.addAttribute("user", user);
 
-        // Check if profile exists
         var profileOpt = userService.getHealthProfile(user);
         profileOpt.ifPresent(p -> model.addAttribute("profile", p));
 
@@ -128,6 +110,8 @@ public class AppController {
                               @RequestParam double weightKg,
                               @RequestParam String activityLevel,
                               @RequestParam String healthCondition,
+                              @RequestParam String dietaryPreference,
+                              @RequestParam(required = false, defaultValue = "") String allergies,
                               HttpSession session,
                               Model model) {
         Long userId = (Long) session.getAttribute("userId");
@@ -137,7 +121,7 @@ public class AppController {
         if (user == null) return "redirect:/login";
 
         userService.saveHealthProfile(user, age, gender, heightCm, weightKg,
-                activityLevel, healthCondition);
+                activityLevel, healthCondition, dietaryPreference, allergies);
 
         return "redirect:/dashboard?profileSaved=true";
     }
@@ -158,7 +142,7 @@ public class AppController {
 
         HealthProfile profile = profileOpt.get();
 
-        // *** THIS IS WHERE THE RULE ENGINE RUNS ***
+        // Run the rule engine
         Map<String, List<FoodItem>> plan = ruleEngineService.generateDietPlan(profile);
 
         // Save the plan to history
@@ -170,6 +154,7 @@ public class AppController {
         model.addAttribute("recommended", plan.get("RECOMMENDED"));
         model.addAttribute("limited", plan.get("LIMITED"));
         model.addAttribute("avoid", plan.get("AVOID"));
+        model.addAttribute("groqAvailable", groqService.isAvailable());
 
         return "results";
     }

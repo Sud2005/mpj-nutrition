@@ -38,6 +38,11 @@ public class HealthProfile {
     // TINKER: Add more conditions and then add rules for them in DietaryRule
     private String healthCondition = "NONE";
 
+    private String dietaryPreference = "VEG"; // VEG or NON_VEG
+
+    // Allergies - comma separated
+    private String allergies = "";
+
     // ----- END TINKER ZONE -----
 
     @OneToOne
@@ -98,4 +103,10 @@ public class HealthProfile {
 
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
+
+    public String getDietaryPreference() { return dietaryPreference; }
+    public void setDietaryPreference(String dietaryPreference) { this.dietaryPreference = dietaryPreference; }
+
+    public String getAllergies() { return allergies; }
+    public void setAllergies(String allergies) { this.allergies = allergies; }
 }

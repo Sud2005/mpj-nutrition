@@ -89,13 +89,27 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="healthCondition">Health Condition</label>
-                    <select id="healthCondition" name="healthCondition" required>
-                        <option value="NONE"          th:selected="${profile == null || profile.healthCondition == 'NONE'}">None</option>
-                        <option value="DIABETES"      th:selected="${profile != null && profile.healthCondition == 'DIABETES'}">Diabetes</option>
-                        <option value="HYPERTENSION"  th:selected="${profile != null && profile.healthCondition == 'HYPERTENSION'}">Hypertension (High BP)</option>
-                        <option value="OBESITY"       th:selected="${profile != null && profile.healthCondition == 'OBESITY'}">Obesity</option>
+                    <label for="healthCondition">Health Condition (Hold Ctrl/Cmd to select multiple)</label>
+                    <select id="healthCondition" name="healthCondition" multiple required size="4">
+                        <option value="NONE"          th:selected="${profile == null || profile.healthCondition == 'NONE' || (profile.healthCondition != null && #strings.contains(profile.healthCondition,'NONE'))}">None</option>
+                        <option value="DIABETES"      th:selected="${profile != null && profile.healthCondition != null && #strings.contains(profile.healthCondition,'DIABETES')}">Diabetes</option>
+                        <option value="HYPERTENSION"  th:selected="${profile != null && profile.healthCondition != null && #strings.contains(profile.healthCondition,'HYPERTENSION')}">Hypertension (High BP)</option>
                     </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="dietaryPreference">Dietary Preference</label>
+                    <select id="dietaryPreference" name="dietaryPreference" required>
+                        <option value="VEG" th:selected="${profile == null || profile.dietaryPreference == 'VEG'}">Vegetarian</option>
+                        <option value="NON_VEG" th:selected="${profile != null && profile.dietaryPreference == 'NON_VEG'}">Non-Vegetarian</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="allergies">Food Allergies (optional, comma-separated)</label>
+                    <input type="text" id="allergies" name="allergies"
+                           placeholder="e.g. peanuts, dairy, gluten"
+                           th:value="${profile != null ? profile.allergies : ''}">
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-full">Save Profile</button>
@@ -135,6 +149,14 @@
                     <tr>
                         <td>Activity:</td>
                         <td><strong th:text="${profile.activityLevel}">-</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Diet:</td>
+                        <td><strong th:text="${profile.dietaryPreference}">-</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Allergies:</td>
+                        <td><strong th:text="${profile.allergies == '' ? 'None' : profile.allergies}">-</strong></td>
                     </tr>
                 </table>
             </div>

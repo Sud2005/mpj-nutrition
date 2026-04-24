@@ -3,16 +3,8 @@ package com.nutrition.dss.model;
 import jakarta.persistence.*;
 
 /**
- * ============================================================
- *  PERSON 2 - FOOD & RULES LAYER
- *  A FoodItem represents one food in the database.
- *  Admins can add/edit/delete food items.
- *
- *  HOW TO TINKER:
- *  - Add a new food category like "SNACKS" or "BEVERAGES"
- *  - Add a calories field → display it in the frontend
- *  - Add a "protein", "carbs", "fat" field for macros
- * ============================================================
+ * FoodItem entity — stores nutritional data for each food.
+ * Includes macronutrient breakdown per 100g.
  */
 @Entity
 @Table(name = "food_items")
@@ -22,23 +14,26 @@ public class FoodItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ----- TINKER ZONE -----
+    @Column(nullable = false)
+    private String name;
 
     @Column(nullable = false)
-    private String name;   // e.g. "Brown Rice", "White Sugar"
+    private String category; // GRAINS, PROTEINS, VEGETABLES, FRUITS, DAIRY, FATS, SWEETS
 
-    // Food category — GRAINS, PROTEINS, VEGETABLES, FRUITS, DAIRY, FATS, SWEETS
-    // TINKER: Add new categories here AND update the admin form in admin.html
-    @Column(nullable = false)
-    private String category;
-
-    // Optional short description shown on the results page
     private String description;
 
-    // TINKER: Add calories per 100g to display nutritional info
-    // private int caloriesPer100g;
+    private int caloriesPer100g;
 
-    // ----- END TINKER ZONE -----
+    // Macronutrients per 100g
+    private double protein;
+    private double carbs;
+    private double fats;
+
+    @Column(nullable = false)
+    private String type; // VEG or NON_VEG
+
+    @Transient
+    private String justification;
 
     // ---- Constructors ----
     public FoodItem() {}
@@ -47,6 +42,51 @@ public class FoodItem {
         this.name = name;
         this.category = category;
         this.description = description;
+        this.type = "VEG";
+    }
+
+    public FoodItem(String name, String category, String description, int caloriesPer100g) {
+        this.name = name;
+        this.category = category;
+        this.description = description;
+        this.caloriesPer100g = caloriesPer100g;
+        this.type = "VEG";
+    }
+
+    public FoodItem(String name, String category, String description, String type) {
+        this.name = name;
+        this.category = category;
+        this.description = description;
+        this.type = type;
+    }
+
+    public FoodItem(String name, String category, String description, int caloriesPer100g, String type) {
+        this.name = name;
+        this.category = category;
+        this.description = description;
+        this.caloriesPer100g = caloriesPer100g;
+        this.type = type;
+    }
+
+    /** Full constructor with macronutrients */
+    public FoodItem(String name, String category, String description,
+                    int caloriesPer100g, double protein, double carbs, double fats, String type) {
+        this.name = name;
+        this.category = category;
+        this.description = description;
+        this.caloriesPer100g = caloriesPer100g;
+        this.protein = protein;
+        this.carbs = carbs;
+        this.fats = fats;
+        this.type = type;
+    }
+
+    // ---- Helpers ----
+    public String getCalorieLabel() {
+        if (caloriesPer100g == 0) return "Unknown";
+        if (caloriesPer100g < 100) return "Low";
+        if (caloriesPer100g <= 250) return "Moderate";
+        return "High";
     }
 
     // ---- Getters & Setters ----
@@ -61,4 +101,22 @@ public class FoodItem {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public int getCaloriesPer100g() { return caloriesPer100g; }
+    public void setCaloriesPer100g(int caloriesPer100g) { this.caloriesPer100g = caloriesPer100g; }
+
+    public double getProtein() { return protein; }
+    public void setProtein(double protein) { this.protein = protein; }
+
+    public double getCarbs() { return carbs; }
+    public void setCarbs(double carbs) { this.carbs = carbs; }
+
+    public double getFats() { return fats; }
+    public void setFats(double fats) { this.fats = fats; }
+
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
+
+    public String getJustification() { return justification; }
+    public void setJustification(String justification) { this.justification = justification; }
 }
