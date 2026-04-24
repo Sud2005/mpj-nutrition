@@ -1,6 +1,7 @@
 package com.nutrition.dss.service;
 
 import com.nutrition.dss.config.GroqConfig;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nutrition.dss.dto.DietOutputDTO;
 import com.nutrition.dss.dto.FoodItemDTO;
 import com.nutrition.dss.dto.WeeklyPlanDTO;
@@ -159,7 +160,7 @@ public class GroqService {
         }
     }
 
-    private WeeklyPlanDTO parseWeeklyPlan(String jsonResponse) throws Exception {
+    private WeeklyPlanDTO parseWeeklyPlan(String jsonResponse) throws JsonProcessingException {
         JsonNode root = objectMapper.readTree(jsonResponse);
         if (root.has("days") && root.get("days").isArray()) {
             return objectMapper.treeToValue(root, WeeklyPlanDTO.class);

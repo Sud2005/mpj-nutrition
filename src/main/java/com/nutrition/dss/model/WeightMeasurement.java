@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter;
 @Entity
 @Table(name = "weight_measurements")
 public class WeightMeasurement {
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,7 +39,7 @@ public class WeightMeasurement {
 
     public String getFormattedMeasuredAt() {
         if (measuredAt == null) return "Unknown";
-        return measuredAt.format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a"));
+        return measuredAt.format(DATE_FORMATTER);
     }
 
     public Long getId() { return id; }

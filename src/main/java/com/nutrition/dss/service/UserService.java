@@ -19,6 +19,8 @@ import java.util.Optional;
  */
 @Service
 public class UserService {
+    private static final double HEIGHT_TOLERANCE_CM = 0.01;
+    private static final double WEIGHT_TOLERANCE_KG = 0.01;
 
     private final UserRepository userRepository;
     private final HealthProfileRepository healthProfileRepository;
@@ -105,8 +107,8 @@ public class UserService {
         Optional<WeightMeasurement> latestOpt = weightMeasurementRepository.findFirstByUserOrderByMeasuredAtDesc(user);
         if (latestOpt.isPresent()) {
             WeightMeasurement latest = latestOpt.get();
-            boolean sameHeight = Math.abs(latest.getHeightCm() - profile.getHeightCm()) < 0.01;
-            boolean sameWeight = Math.abs(latest.getWeightKg() - profile.getWeightKg()) < 0.01;
+            boolean sameHeight = Math.abs(latest.getHeightCm() - profile.getHeightCm()) < HEIGHT_TOLERANCE_CM;
+            boolean sameWeight = Math.abs(latest.getWeightKg() - profile.getWeightKg()) < WEIGHT_TOLERANCE_KG;
             if (sameHeight && sameWeight) {
                 return;
             }

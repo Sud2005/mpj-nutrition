@@ -179,6 +179,10 @@ public class RuleEngineService {
         return new WeeklyPlanDTO(days);
     }
 
+    /**
+     * Build recent weight-history context to help the LLM adapt meal intensity
+     * based on whether the user is gaining, losing, or maintaining weight.
+     */
     private String buildWeightTrendContext(HealthProfile profile) {
         if (profile == null || profile.getUser() == null) {
             return "No historical measurements available.";
