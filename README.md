@@ -72,7 +72,7 @@ Upon startup, the database is seeded with two default accounts:
 4. **Nutritionist Review (`AdminController`):** The plan is saved as `PENDING`. An admin reviews the JSON output and updates the status.
 5. **Final Output:** The user views the visually pleasing 7-day schedule on their dashboard, badged as "Suggested by a Nutritionist" and labeled with its approval status.
 
-## Contributing
+##Contributing 
 
 Feel free to open issues or submit pull requests for any improvements!
 
